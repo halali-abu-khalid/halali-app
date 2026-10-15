@@ -1,9 +1,9 @@
 
-const CACHE_NAME = 'halali-offline-2026-10-16-v3';
+const CACHE_NAME = 'halali-offline-2026-10-16-v4';
 
 const APP_SHELL = [
-  './',
-  './index.html',
+
+  
   './index-new.html',
   './manifest.webmanifest',
   './icon-192.png',
