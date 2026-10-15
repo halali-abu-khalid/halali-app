@@ -24,7 +24,8 @@ const $=id=>document.getElementById(id);
 const status=$('status');
 function report(msg,kind=''){status.textContent=msg;status.className=kind;}
 $('issue').addEventListener('click',async()=>{
- const secret=$('secret').value.trim();const device=$('device').value.trim();
+ const secret=$('secret').value.trim();const device=($('device').value.match(/AKD-[A-Za-z0-9_-]+/)||[''])[0];
+$('device').value=device;
  $('code').value='';$('meta').textContent='';
  if(!secret||!device){report('أدخل الرقم السري ورقم الجهاز','error');return;}
  $('issue').disabled=true;report('جاري إصدار الكود...');
