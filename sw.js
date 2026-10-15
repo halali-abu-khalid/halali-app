@@ -1,4 +1,4 @@
-const CACHE_NAME = 'halali-offline-2026-10-15-v1';
+const CACHE_NAME = 'halali-offline-2026-10-16-v2';
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', event => {
