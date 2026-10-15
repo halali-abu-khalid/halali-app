@@ -63,7 +63,24 @@ function unlock(expiry){document.documentElement.classList.remove('halali-locked
 function msg(t){status.textContent=t}
 async function verify(code,action){const res=await fetch(API,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,device_id:device,code})});const data=await res.json();if(!res.ok||!data.active)throw new Error(data.error||'كود التفعيل غير صالح');const expiry=Date.parse(data.expires_at);if(!Number.isFinite(expiry)||expiry<=Date.now())throw new Error('انتهى الاشتراك');if(!write(LICENSE_KEY,JSON.stringify({device,code,expiry,verifiedAt:Date.now()})))throw new Error('تعذر حفظ التفعيل على هذا الجهاز');return expiry}
 $('gateCopy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(device);msg('تم نسخ رقم الجهاز')}catch(e){const range=document.createRange();range.selectNodeContents($('gateDevice'));const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);msg('حدد رقم الجهاز وانسخه يدويًا')}});
-$('gateActivate').addEventListener('click',async()=>{const code=$('gateCode').value.trim().toUpperCase().replace(/\s+/g,'');if(!/^HL-(?:[A-Z2-9]{5}-){3}[A-Z2-9]{5}$/.test(code)){msg('تأكد من إدخال كود التفعيل كاملًا');return}const btn=$('gateActivate');btn.disabled=true;msg('جاري التحقق من الكود...');try{const expiry=await verify(code,'activate');$('gateCode').value='';unlock(expiry)}catch(e){msg(e instanceof TypeError?'تعذر الاتصال بالسيرفر. شغّل الإنترنت وحاول مرة ثانية':e.message)}finally{btn.disabled=false}});
+$('gateActivate').addEventListener('click',async()=>{
+const code=(($('gateCode').value.toUpperCase().match(/HL-(?:[A-Z2-9]{5}-){3}[A-Z2-9]{5}/))||[''])[0];
+$('gateCode').value=code;
+if(!/^HL-(?:[A-Z2-9]{5}-){3}[A-Z2-9]{5}$/.test(code)){msg('تأكد من إدخال كود التفعيل كاملًا');return}
+const btn=$('gateActivate');
+btn.disabled=true;
+msg('جاري التحقق من الكود...');
+try{
+const expiry=await verify(code,'activate');
+$('gateCode').value='';
+unlock(expiry);
+}catch(e){
+msg(e instanceof TypeError?'تعذر الاتصال بالسيرفر. شغّل الإنترنت وحاول مرة ثانية':e.message);
+}finally{
+btn.disabled=false;
+}
+});
+
 (async()=>{const x=stored();if(!x){msg('انسخ رقم الجهاز واطلب كود التفعيل');return}if(x.expiry<=Date.now()){msg('انتهى الاشتراك. اطلب كود تجديد؛ سجلاتك محفوظة.');return}if(!navigator.onLine){unlock(x.expiry);return}msg('جاري التأكد من الاشتراك...');try{unlock(await verify(x.code,'verify'))}catch(e){if(e instanceof TypeError){msg('تعذر الاتصال بالخادم. سيتم استخدام التفعيل المحفوظ مؤقتًا.');unlock(x.expiry)}else{msg('تعذر التحقق من الاشتراك: '+e.message+'. اطلب المساعدة من صاحب البرنامج.')}}})();
 })();
 </script><main><div class="top-theme" aria-label="اختيار المظهر"><button type="button" id="topNightMode" aria-label="الوضع الليلي">🌙 الليل</button><button type="button" id="topDayMode" aria-label="الوضع النهاري">☀️ النهار</button></div><h1>🐑 حلالي</h1><p class="slogan">الطيب لأهل الطيب</p><section id="homePage"><div class="panel"><h2>ملخص الحلال</h2><div id="globalStats" class="stats"></div></div><div class="homecards"><button data-page="herd">🐑 سجل القطيع</button><button data-page="births">🐣 المواليد</button><button data-page="deaths">🕯️ النفوق</button><button data-page="vaccinations">💉 التطعيمات</button><button data-page="treatment">💊 سجل العلاج</button><button data-page="alerts">🔔 التنبيهات <span id="alertsNavCount"></span></button><button data-page="sales">💰 البيع</button><button data-page="buyers">📱 سجل المشترين</button><button data-page="purchases">🛒 المشتريات</button><button data-page="expenses">🧾 المصاريف</button><button data-page="profit">💰 الربح والخسارة</button><button data-page="inventory">📋 سجل الجرد</button><button data-page="eweReport">🐑 تقرير النعاج</button><button data-page="birthReport">🐣 تقرير المواليد</button><button data-page="periodReport">📅 تقرير الفترات</button><button data-page="production">🏆 إنتاج النعاج</button><button data-page="backup">💾 النسخة الاحتياطية</button><button data-page="about">📜 نبذة عن صاحب البرنامج</button></div></section><div id="innerNav" class="hidden"><button class="backbtn" id="backHome">↩ رجوع للصفحة الرئيسية</button></div>
