@@ -1,10 +1,8 @@
 
-const CACHE_NAME = 'halali-offline-2026-10-16-v4';
+const CACHE_NAME = 'halali-protected-offline-v5';
 
 const APP_SHELL = [
-
-  
-  './index-new.html',
+  './halali-protected.html',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
@@ -23,7 +21,10 @@ self.addEventListener('activate', event => {
     caches.keys()
       .then(keys => Promise.all(
         keys
-          .filter(key => key.startsWith('halali-offline-') && key !== CACHE_NAME)
+          .filter(key =>
+            key.startsWith('halali-') &&
+            key !== CACHE_NAME
+          )
           .map(key => caches.delete(key))
       ))
       .then(() => self.clients.claim())
@@ -31,36 +32,48 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  const request = event.request;
+  const url = new URL(request.url);
+
   if (
-    event.request.method !== 'GET' ||
-    new URL(event.request.url).origin !== self.location.origin
+    request.method !== 'GET' ||
+    url.origin !== self.location.origin
   ) return;
 
-  if (event.request.mode === 'navigate') {
+  const protectedPath =
+    new URL('./halali-protected.html', self.location.href).pathname;
+
+  if (
+    request.mode === 'navigate' &&
+    url.pathname === protectedPath
+  ) {
     event.respondWith(
-      fetch(event.request)
+      fetch(request)
         .then(response => {
           if (response.ok) {
             const copy = response.clone();
             event.waitUntil(
               caches.open(CACHE_NAME)
-                .then(cache => cache.put(event.request, copy))
+                .then(cache =>
+                  cache.put('./halali-protected.html', copy)
+                )
             );
           }
           return response;
         })
-        .catch(async () => {
-          return (
-            await caches.match(event.request) ||
-            await caches.match('./index-new.html')
-          );
-        })
+        .catch(() =>
+          caches.match('./halali-protected.html')
+        )
     );
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then(cached => cached || fetch(event.request))
-  );
+  if (APP_SHELL.some(path =>
+    new URL(path, self.location.href).pathname === url.pathname
+  )) {
+    event.respondWith(
+      caches.match(request)
+        .then(cached => cached || fetch(request))
+    );
+  }
 });
