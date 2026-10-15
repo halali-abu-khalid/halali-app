@@ -1,0 +1,26 @@
+{
+  "name": "حلالي — الطيب لأهل الطيب",
+  "short_name": "حلالي",
+  "description": "برنامج إدارة الحلال والمواليد",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101f37",
+  "theme_color": "#101f37",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
