@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>مولد أكواد حلالي</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100vh;
+ background:#090909;color:#fff;
+ font-family:Tahoma,Arial,sans-serif;
+ display:flex;align-items:center;
+ justify-content:center;padding:20px
+}
+.card{
+ width:100%;max-width:540px;
+ background:#17140a;
+ border:1px solid #b99024;
+ border-radius:20px;padding:28px
+}
+h1{text-align:center;color:#f5c842;font-size:25px}
+p{text-align:center;color:#bdb7a6}
+label{display:block;margin:22px 0 9px}
+input{
+ width:100%;padding:15px;
+ border:1px solid #927524;
+ border-radius:10px;background:#080808;
+ color:white;font-size:17px;
+ direction:ltr;text-align:left
+}
+button{
+ width:100%;padding:16px;
+ border:0;border-radius:10px;
+ background:#e6b82d;color:#171000;
+ font-size:19px;font-weight:bold;
+ margin-top:16px;cursor:pointer
+}
+button:disabled{opacity:.5;cursor:wait}
+#result{
+ margin-top:22px;text-align:center;
+ overflow-wrap:anywhere;
+}
+#code{
+ font-size:20px;color:#ffdb67;
+ direction:ltr;unicode-bidi:isolate
+}
+.ok{color:#73d78d}
+.error{color:#ff8c8c}
+small{display:block;text-align:center;color:#aaa;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>🐑 مولد أكواد حلالي</h1>
+<p>نظام التفعيل السنوي — 365 يومًا</p>
+
+<label for="secret">الرقم السري الخاص بالمالك</label>
+<input id="secret" type="password"
+ autocomplete="off" placeholder="أدخل الرقم السري">
+
+<label for="device">رقم جهاز العميل</label>
+<input id="device" type="text"
+ autocomplete="off" spellcheck="false"
+ placeholder="AKD-...">
+
+<button id="generate" onclick="issueCode()">
+توليد كود التفعيل
+</button>
+
+<div id="result" aria-live="polite"></div>
+
+<button id="copy" onclick="copyCode()" hidden>
+نسخ كود التفعيل
+</button>
+
+<small>مولد خاص بالمالك — حلالي</small>
+</div>
+
+<script>
+"use strict";
+
+const API =
+ "https://oozwsrkjdtieaqutvtel.supabase.co/functions/v1/halali-activation";
+
+let currentCode = "";
+
+const secretInput = document.getElementById("secret");
+const deviceInput = document.getElementById("device");
+const generateButton = document.getElementById("generate");
+const copyButton = document.getElementById("copy");
+const result = document.getElementById("result");
+
+function message(text, className) {
+ result.textContent = text;
+ result.className = className || "";
+}
+
+async function issueCode() {
+ const secret = secretInput.value.trim();
+ const device = deviceInput.value.trim();
+
+ currentCode = "";
+ copyButton.hidden = true;
+
+ if (!secret || !device) {
+  message("أدخل الرقم السري ورقم الجهاز", "error");
+  return;
+ }
+
+ generateButton.disabled = true;
+ message("جاري إصدار الكود...");
+
+ try {
+  const response = await fetch(API, {
+   method: "POST",
+   cache: "no-store",
+   headers: {
+    "Content-Type": "application/json",
+    "x-admin-secret": secret
+   },
+   body: JSON.stringify({
+    action: "issue",
+    device_id: device
+   })
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.code) {
+   throw new Error(
+    response.status === 401
+     ? "الرقم السري غير صحيح"
+     : (data.error || "تعذر إصدار الكود")
+   );
+  }
+
+  currentCode = data.code;
+
+  result.replaceChildren();
+
+  const success = document.createElement("div");
+  success.className = "ok";
+  success.textContent = "تم إصدار كود التفعيل بنجاح";
+
+  const code = document.createElement("div");
+  code.id = "code";
+  code.textContent = currentCode;
+
+  const duration = document.createElement("div");
+  duration.textContent =
+   "المدة: " + data.days + " يوم";
+
+  const expiry = document.createElement("div");
+  expiry.textContent =
+   "تاريخ الانتهاء: " +
+   (data.expires_at_sa || "غير متوفر");
+
+  result.append(success, code, duration, expiry);
+  copyButton.hidden = false;
+
+ } catch (error) {
+  message(
+   error instanceof TypeError
+    ? "تعذر الاتصال بالسيرفر. تأكد من الإنترنت."
+    : error.message,
+   "error"
+  );
+ } finally {
+  generateButton.disabled = false;
+  secretInput.value = "";
+ }
+}
+
+async function copyCode() {
+ if (!currentCode) return;
+
+ try {
+  await navigator.clipboard.writeText(currentCode);
+  alert("تم نسخ كود التفعيل");
+ } catch {
+  alert("تعذر النسخ التلقائي. انسخ الكود يدويًا.");
+ }
+}
+</script>
+</body>
+</html>
