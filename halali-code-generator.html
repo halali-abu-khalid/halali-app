@@ -1,188 +1,46 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>مولد أكواد حلالي</title>
 <style>
-*{box-sizing:border-box}
-body{
- margin:0;min-height:100vh;
- background:#090909;color:#fff;
- font-family:Tahoma,Arial,sans-serif;
- display:flex;align-items:center;
- justify-content:center;padding:20px
-}
-.card{
- width:100%;max-width:540px;
- background:#17140a;
- border:1px solid #b99024;
- border-radius:20px;padding:28px
-}
-h1{text-align:center;color:#f5c842;font-size:25px}
-p{text-align:center;color:#bdb7a6}
-label{display:block;margin:22px 0 9px}
-input{
- width:100%;padding:15px;
- border:1px solid #927524;
- border-radius:10px;background:#080808;
- color:white;font-size:17px;
- direction:ltr;text-align:left
-}
-button{
- width:100%;padding:16px;
- border:0;border-radius:10px;
- background:#e6b82d;color:#171000;
- font-size:19px;font-weight:bold;
- margin-top:16px;cursor:pointer
-}
-button:disabled{opacity:.5;cursor:wait}
-#result{
- margin-top:22px;text-align:center;
- overflow-wrap:anywhere;
-}
-#code{
- font-size:20px;color:#ffdb67;
- direction:ltr;unicode-bidi:isolate
-}
-.ok{color:#73d78d}
-.error{color:#ff8c8c}
-small{display:block;text-align:center;color:#aaa;margin-top:20px}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:#0b0a06;color:#fff;font-family:Tahoma,Arial,sans-serif;display:grid;place-items:center;padding:18px}.panel{width:min(100%,615px);background:#17140b;border:1px solid #80651c;border-radius:20px;padding:30px}h1{color:#f1c644;text-align:center;font-size:26px;margin:28px 0 34px}label{display:block;margin:20px 0 13px;font-size:17px;text-align:right}input{width:100%;height:64px;background:#0c0b07;color:#fff;border:1px solid #8c7029;border-radius:11px;font:19px Tahoma,Arial,sans-serif;padding:12px;direction:ltr;text-align:left}input:focus{outline:2px solid #f1c644}button{display:block;width:100%;border:0;border-radius:11px;background:#e6b82d;color:#201900;font:bold 20px Tahoma,Arial,sans-serif;min-height:65px;margin-top:15px;cursor:pointer}button:disabled{opacity:.6;cursor:wait}#status{min-height:25px;text-align:center;margin-top:12px;font-size:14px}#status.error{color:#ff9999}#status.success{color:#a4e8a4}#meta{text-align:center;color:#e7d28d;font-size:14px;min-height:20px;margin-top:8px}.note{font-size:12px;color:#aa9e7e;text-align:center;margin-top:24px;line-height:1.8}@media(max-width:600px){.panel{padding:20px}h1{font-size:22px}}
 </style>
 </head>
-<body>
-<div class="card">
+<body><main class="panel">
 <h1>🐑 مولد أكواد حلالي</h1>
-<p>نظام التفعيل السنوي — 365 يومًا</p>
-
-<label for="secret">الرقم السري الخاص بالمالك</label>
-<input id="secret" type="password"
- autocomplete="off" placeholder="أدخل الرقم السري">
-
-<label for="device">رقم جهاز العميل</label>
-<input id="device" type="text"
- autocomplete="off" spellcheck="false"
- placeholder="AKD-...">
-
-<button id="generate" onclick="issueCode()">
-توليد كود التفعيل
-</button>
-
-<div id="result" aria-live="polite"></div>
-
-<button id="copy" onclick="copyCode()" hidden>
-نسخ كود التفعيل
-</button>
-
-<small>مولد خاص بالمالك — حلالي</small>
-</div>
-
+<label for="secret">الرقم السري</label><input id="secret" type="password" autocomplete="off" spellcheck="false">
+<label for="device">رقم الجهاز</label><input id="device" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false">
+<button id="issue" type="button">توليد الكود</button>
+<label for="code">كود التفعيل</label><input id="code" type="text" readonly autocomplete="off">
+<button id="copy" type="button">نسخ كود التفعيل</button>
+<div id="status" role="status" aria-live="polite"></div><div id="meta"></div>
+<div class="note">خاص بإدارة حلالي • يتطلب اتصالًا بالإنترنت لإصدار الأكواد</div>
+</main>
 <script>
-"use strict";
-
-const API =
- "https://oozwsrkjdtieaqutvtel.supabase.co/functions/v1/halali-activation";
-
-let currentCode = "";
-
-const secretInput = document.getElementById("secret");
-const deviceInput = document.getElementById("device");
-const generateButton = document.getElementById("generate");
-const copyButton = document.getElementById("copy");
-const result = document.getElementById("result");
-
-function message(text, className) {
- result.textContent = text;
- result.className = className || "";
-}
-
-async function issueCode() {
- const secret = secretInput.value.trim();
- const device = deviceInput.value.trim();
-
- currentCode = "";
- copyButton.hidden = true;
-
- if (!secret || !device) {
-  message("أدخل الرقم السري ورقم الجهاز", "error");
-  return;
- }
-
- generateButton.disabled = true;
- message("جاري إصدار الكود...");
-
- try {
-  const response = await fetch(API, {
-   method: "POST",
-   cache: "no-store",
-   headers: {
-    "Content-Type": "application/json",
-    "x-admin-secret": secret
-   },
-   body: JSON.stringify({
-    action: "issue",
-    device_id: device
-   })
-  });
-
-  const data = await response.json();
-
-  if (!response.ok || !data.code) {
-   throw new Error(
-    response.status === 401
-     ? "الرقم السري غير صحيح"
-     : (data.error || "تعذر إصدار الكود")
-   );
-  }
-
-  currentCode = data.code;
-
-  result.replaceChildren();
-
-  const success = document.createElement("div");
-  success.className = "ok";
-  success.textContent = "تم إصدار كود التفعيل بنجاح";
-
-  const code = document.createElement("div");
-  code.id = "code";
-  code.textContent = currentCode;
-
-  const duration = document.createElement("div");
-  duration.textContent =
-   "المدة: " + data.days + " يوم";
-
-  const expiry = document.createElement("div");
-  expiry.textContent =
-   "تاريخ الانتهاء: " +
-   (data.expires_at_sa || "غير متوفر");
-
-  result.append(success, code, duration, expiry);
-  copyButton.hidden = false;
-
- } catch (error) {
-  message(
-   error instanceof TypeError
-    ? "تعذر الاتصال بالسيرفر. تأكد من الإنترنت."
-    : error.message,
-   "error"
-  );
- } finally {
-  generateButton.disabled = false;
-  secretInput.value = "";
- }
-}
-
-async function copyCode() {
- if (!currentCode) return;
-
- try {
-  await navigator.clipboard.writeText(currentCode);
-  alert("تم نسخ كود التفعيل");
- } catch {
-  alert("تعذر النسخ التلقائي. انسخ الكود يدويًا.");
- }
-}
-</script>
-</body>
-</html>
+'use strict';
+const API='https://oozwsrkjdtieaqutvtel.supabase.co/functions/v1/halali-activation';
+const $=id=>document.getElementById(id);
+const status=$('status');
+function report(msg,kind=''){status.textContent=msg;status.className=kind;}
+$('issue').addEventListener('click',async()=>{
+ const secret=$('secret').value.trim();const device=$('device').value.trim();
+ $('code').value='';$('meta').textContent='';
+ if(!secret||!device){report('أدخل الرقم السري ورقم الجهاز','error');return;}
+ $('issue').disabled=true;report('جاري إصدار الكود...');
+ try{
+  const res=await fetch(API,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','x-admin-secret':secret},body:JSON.stringify({action:'issue',device_id:device})});
+  const data=await res.json();
+  if(!res.ok||typeof data.code!=='string')throw new Error(res.status===401?'الرقم السري غير صحيح':(data.error||'تعذر إصدار الكود'));
+  $('code').value=data.code;
+  $('meta').textContent='المدة: '+(data.days??365)+' يوم'+(data.expires_at_sa?' — ينتهي: '+data.expires_at_sa:'');
+  report('تم إصدار الكود بنجاح','success');
+ }catch(err){report(err instanceof TypeError?'تعذر الاتصال بالسيرفر':(err.message||'حدث خطأ'),'error');}
+ finally{$('secret').value='';$('issue').disabled=false;}
+});
+$('copy').addEventListener('click',async()=>{
+ const code=$('code').value;if(!code){report('ولّد الكود أولًا','error');return;}
+ try{await navigator.clipboard.writeText(code);report('تم نسخ كود التفعيل','success');}
+ catch{ $('code').focus();$('code').select();report('حدد الكود وانسخه يدويًا','error'); }
+});
+</script></body></html>
