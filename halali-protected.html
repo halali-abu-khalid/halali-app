@@ -58,8 +58,78 @@ let device=read(ID_KEY);
 if(!device||!(/^[A-Za-z0-9_-]{8,100}$/.test(device))){device=makeId();write(ID_KEY,device)}
 $('gateDevice').textContent=device;
 function stored(){try{const x=JSON.parse(read(LICENSE_KEY)||'null');return x&&x.device===device&&typeof x.code==='string'&&Number.isFinite(x.expiry)?x:null}catch(e){return null}}
-function days(expiry){return Math.max(0,Math.ceil((expiry-Date.now())/DAY))}
-function unlock(expiry){document.documentElement.classList.remove('halali-locked');gate.hidden=true;let badge=document.getElementById('halaliLicenseDays');if(!badge){badge=document.createElement('div');badge.id='halaliLicenseDays';badge.style.cssText='text-align:center;font:12px Tahoma,Arial;color:#d9b66d;padding:3px';document.querySelector('main')?.prepend(badge)}badge.textContent='الاشتراك: باقي '+days(expiry)+' يوم';}
+
+let subscriptionExpiry = 0;
+
+function saDay(ms) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Riyadh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date(ms));
+
+  const value = type =>
+    Number(parts.find(p => p.type === type).value);
+
+  return Math.floor(
+    Date.UTC(value('year'), value('month') - 1, value('day')) / DAY
+  );
+}
+
+function days(expiry) {
+  return Math.max(0, saDay(expiry) - saDay(Date.now()));
+}
+
+function showSubscription() {
+  if (!subscriptionExpiry) return;
+
+  const home = document.getElementById('homePage');
+  if (!home) return;
+
+  let badge = document.getElementById('halaliLicenseDays');
+
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'halaliLicenseDays';
+    badge.style.cssText =
+      'background:#223653;border:1px solid #d9b66d;' +
+      'border-radius:13px;padding:12px;margin:12px 0;' +
+      'text-align:center;color:#d9b66d;' +
+      'font:bold 16px Tahoma,Arial;line-height:2';
+    home.prepend(badge);
+  }
+
+  const remaining = days(subscriptionExpiry);
+
+  const endDate = new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
+    timeZone: 'Asia/Riyadh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date(subscriptionExpiry));
+
+  badge.textContent =
+    '🔑 الاشتراك السنوي — باقي ' + remaining +
+    ' يومًا | ينتهي: ' + endDate +
+    ' | بتوقيت السعودية 🇸🇦';
+}
+
+function unlock(expiry) {
+  subscriptionExpiry = expiry;
+  document.documentElement.classList.remove('halali-locked');
+  gate.hidden = true;
+  showSubscription();
+}
+
+document.addEventListener('DOMContentLoaded', showSubscription);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) showSubscription();
+});
+window.addEventListener('focus', showSubscription);
+setInterval(showSubscription, 60000);
+
+
 function msg(t){status.textContent=t}
 async function verify(code,action){const res=await fetch(API,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,device_id:device,code})});const data=await res.json();if(!res.ok||!data.active)throw new Error(data.error||'كود التفعيل غير صالح');const expiry=Date.parse(data.expires_at);if(!Number.isFinite(expiry)||expiry<=Date.now())throw new Error('انتهى الاشتراك');if(!write(LICENSE_KEY,JSON.stringify({device,code,expiry,verifiedAt:Date.now()})))throw new Error('تعذر حفظ التفعيل على هذا الجهاز');return expiry}
 $('gateCopy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(device);msg('تم نسخ رقم الجهاز')}catch(e){const range=document.createRange();range.selectNodeContents($('gateDevice'));const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);msg('حدد رقم الجهاز وانسخه يدويًا')}});
