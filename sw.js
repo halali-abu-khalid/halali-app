@@ -1,7 +1,9 @@
 
-const CACHE_NAME = 'halali-protected-offline-v5';
+const CACHE_NAME = 'halali-protected-offline-v6';
 
 const APP_SHELL = [
+  './',
+  './index.html',
   './halali-protected.html',
   './manifest.webmanifest',
   './icon-192.png',
@@ -40,30 +42,13 @@ self.addEventListener('fetch', event => {
     url.origin !== self.location.origin
   ) return;
 
-  const protectedPath =
-    new URL('./halali-protected.html', self.location.href).pathname;
-
-  if (
-    request.mode === 'navigate' &&
-    url.pathname === protectedPath
-  ) {
+  if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then(response => {
-          if (response.ok) {
-            const copy = response.clone();
-            event.waitUntil(
-              caches.open(CACHE_NAME)
-                .then(cache =>
-                  cache.put('./halali-protected.html', copy)
-                )
-            );
-          }
-          return response;
-        })
-        .catch(() =>
+      caches.match(request).then(cached =>
+        cached || fetch(request).catch(() =>
           caches.match('./halali-protected.html')
         )
+      )
     );
     return;
   }
