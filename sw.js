@@ -1,10 +1,9 @@
 
-const CACHE_NAME = 'halali-protected-offline-v6';
+const CACHE_NAME = 'halali-offline-v7';
 
-const APP_SHELL = [
-  './',
-  './index.html',
+const FILES = [
   './halali-protected.html',
+  './halali-preview-protected.html',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
@@ -13,23 +12,23 @@ const APP_SHELL = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
+      .then(cache => cache.addAll(FILES))
       .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(
+    caches.keys().then(keys =>
+      Promise.all(
         keys
           .filter(key =>
             key.startsWith('halali-') &&
             key !== CACHE_NAME
           )
           .map(key => caches.delete(key))
-      ))
-      .then(() => self.clients.claim())
+      )
+    ).then(() => self.clients.claim())
   );
 });
 
@@ -44,21 +43,12 @@ self.addEventListener('fetch', event => {
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      caches.match(request).then(cached =>
-        cached || fetch(request).catch(() =>
-          caches.match('./halali-protected.html')
+      fetch(request).catch(() =>
+        caches.match(request).then(cached =>
+          cached || caches.match('./halali-preview-protected.html')
         )
       )
     );
-    return;
-  }
-
-  if (APP_SHELL.some(path =>
-    new URL(path, self.location.href).pathname === url.pathname
-  )) {
-    event.respondWith(
-      caches.match(request)
-        .then(cached => cached || fetch(request))
-    );
   }
 });
+
