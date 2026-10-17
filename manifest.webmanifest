@@ -4,7 +4,7 @@
   "description": "برنامج إدارة الحلال والمواليد",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "./halali-protected.html",
+  "start_url": "./halali-protected-new.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#101f37",
