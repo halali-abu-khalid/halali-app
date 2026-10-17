@@ -1,9 +1,9 @@
 
-const CACHE_NAME = 'halali-offline-v7';
+const CACHE_NAME = 'halali-offline-v8';
 
 const FILES = [
   './halali-protected.html',
-  './halali-preview-protected.html',
+  './halali-protected-new.html',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
@@ -45,7 +45,7 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(request).catch(() =>
         caches.match(request).then(cached =>
-          cached || caches.match('./halali-preview-protected.html')
+          cached || caches.match('./halali-protected-new.html')
         )
       )
     );
